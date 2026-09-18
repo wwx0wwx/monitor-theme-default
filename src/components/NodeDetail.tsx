@@ -5,9 +5,8 @@ import {
   Tooltip, XAxis, YAxis,
 } from "recharts"
 
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Country, Status } from "@/components/NodeCard"
+import { Country, Status, Tags } from "@/components/NodeCard"
 import { api, type Node } from "@/lib/api"
 import {
   axisBytes, axisTop, bytes, clockFor, quarters, cpuName, CYCLES, FOREVER, money, osName, rate, timeTicks,
@@ -310,12 +309,12 @@ export function NodeDetail({ node }: { node: Node }) {
         <h2 className="truncate text-lg font-medium">{node.name}</h2>
         <Country node={node} />
         <Status node={node} />
-        {node.agent_version && (
-          <Badge variant="outline" className="font-normal">
-            agent {node.agent_version}
-          </Badge>
-        )}
       </div>
+
+      {/* The operator's semicolon badges, one row under the name -- the same
+          blocks the card carries. Public by design, unlike the note below,
+          which only a signed-in panel ever receives. */}
+      <Tags node={node} className="" />
 
       {/* One flat row of facts: what is left after the traffic figures moved
           out is one machine's spec sheet, and a box around a single topic is

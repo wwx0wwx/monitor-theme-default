@@ -29,6 +29,10 @@ export type Node = {
   online: boolean
   /** ISO 3166-1 alpha-2, or empty when the hub could not locate the address. */
   country: string
+  /** Semicolon-separated badges the operator files the server under. */
+  tag: string
+  /** Filter dimension; empty means no group. */
+  group: string
   last_seen: number
   metrics: Metrics | null
   os: string

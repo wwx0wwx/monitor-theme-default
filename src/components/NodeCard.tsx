@@ -64,6 +64,23 @@ export function Country({ node }: { node: Node }) {
   )
 }
 
+/** The operator's own badges for the machine -- specs, billing, whatever --
+ * split on semicolons exactly as they were entered. Shared by the card and the
+ * detail page, which own their spacing through `className`. */
+export function Tags({ node, className = "mt-2" }: { node: Node; className?: string }) {
+  const tags = node.tag?.split(";").map((t) => t.trim()).filter(Boolean) ?? []
+  if (!tags.length) return null
+  return (
+    <div className={`${className} flex flex-wrap gap-1`}>
+      {tags.map((tag) => (
+        <Badge key={tag} variant="secondary" className="px-1.5 py-0 text-[10px] font-normal text-muted-foreground">
+          {tag}
+        </Badge>
+      ))}
+    </div>
+  )
+}
+
 // Traffic uses the plan's own counting rule, so the bar matches the quota the
 // node is billed against.
 function trafficFoot(node: Node) {
@@ -111,6 +128,7 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
             {node.virt && node.virt !== "none" ? ` · ${node.virt}` : ""}
             {node.arch ? ` · ${node.arch}` : ""}
           </p>
+          <Tags node={node} />
         </div>
         {/* State right, identity left, one line each. */}
         <div className="flex shrink-0 flex-col items-end gap-1">

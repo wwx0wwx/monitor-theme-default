@@ -81,7 +81,7 @@ export function Summary({ nodes }: { nodes: Node[] }) {
 
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <Tile icon={Server} label="节点">
+      <Tile icon={Server} label="服务器">
         <div className="tnum mt-1 text-xl font-semibold">
           {online.length} / {nodes.length}
         </div>
@@ -90,10 +90,10 @@ export function Summary({ nodes }: { nodes: Node[] }) {
         </div>
       </Tile>
 
-      <Tile icon={Activity} label="最忙节点">
+      <Tile icon={Activity} label="最忙服务器">
         <div className="tnum mt-1 text-xl font-semibold">{busiest ? `${cpu.toFixed(1)}%` : "—"}</div>
         <div className={cn("mt-auto truncate pt-1 text-xs", cpu >= 85 ? "font-medium text-foreground" : "text-muted-foreground")}>
-          {busiest ? busiest.name : "无在线节点"}
+          {busiest ? busiest.name : "无在线服务器"}
         </div>
       </Tile>
 

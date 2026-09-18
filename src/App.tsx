@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { api, useNodes, type Node } from "@/lib/api"
 
-type Me = { authed: boolean; github: boolean; site_name: string; public_page: boolean }
+type Me = { authed: boolean; site_name: string; site_description: string; public_page: boolean }
 
 // Split out because recharts is most of this bundle and the list page draws no
 // chart. The landing page is 242 kB rather than 629 kB (77 kB gzipped against
@@ -91,6 +91,11 @@ export default function App() {
 
   const sorted = [...(nodes ?? [])].sort((a, b) => a.sort - b.sort || a.id - b.id)
   const selected = sorted.find((n) => n.id === open)
+  // The group filter is a dimension the operator files servers under; the list
+  // stays flat otherwise, as it always was.
+  const [group, setGroup] = useState("")
+  const groups = [...new Set(sorted.map((n) => n.group).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-Hans-CN"))
+  const shown = group ? sorted.filter((n) => n.group === group) : sorted
 
   // `/node/{id}` is a page people bookmark and share, so the tab needs the node's
   // name. The site name rather than a fixed string, since the hub lets an operator
@@ -98,6 +103,21 @@ export default function App() {
   useEffect(() => {
     document.title = [selected?.name, me?.site_name || "Monitor"].filter(Boolean).join(" · ")
   }, [selected?.name, me?.site_name])
+
+  // The description the operator wrote is both page copy and the meta a crawler
+  // reads; the page keeps its own copy current with whatever /me reported.
+  useEffect(() => {
+    const text = me?.site_description?.trim() ?? ""
+    let meta = document.querySelector<HTMLMetaElement>('meta[name="description"]')
+    if (text) {
+      if (!meta) {
+        meta = document.createElement("meta")
+        meta.name = "description"
+        document.head.appendChild(meta)
+      }
+      meta.content = text
+    }
+  }, [me?.site_description])
 
   // Only while there is nothing else to show. Once `me` has loaded, a later
   // failure belongs beside the page rather than over it.
@@ -113,23 +133,28 @@ export default function App() {
   return (
     <div className="min-h-svh">
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto max-w-[1400px] px-4 py-3 sm:px-6">
           {/* The site name is the way back to the list, so a node page needs
               no back button of its own. */}
-          <button className="font-semibold transition-opacity hover:opacity-70" onClick={() => go(null)}>
-            {me.site_name || "Monitor"}
-          </button>
-          <div className="flex-1" />
-          {/* The panel is a separate app built into the hub, not part of this
-              theme, so this is a navigation rather than a route. */}
-          <Button variant="ghost" size="sm" asChild>
-            <a href="/admin/">
-              <Wrench /> {me.authed ? "进入后台" : "登录"}
-            </a>
-          </Button>
-          <Button variant="ghost" size="icon" onClick={toggleTheme} title="切换主题">
-            {dark ? <Sun /> : <Moon />}
-          </Button>
+          <div className="flex items-center gap-3">
+            <button className="font-semibold transition-opacity hover:opacity-70" onClick={() => go(null)}>
+              {me.site_name || "Monitor"}
+            </button>
+            {me.site_description?.trim() && (
+              <span className="min-w-0 truncate text-xs text-muted-foreground">{me.site_description.trim()}</span>
+            )}
+            <div className="flex-1" />
+            {/* The panel is a separate app built into the hub, not part of this
+                theme, so this is a navigation rather than a route. */}
+            <Button variant="ghost" size="sm" asChild>
+              <a href="/admin/">
+                <Wrench /> {me.authed ? "进入后台" : "登录"}
+              </a>
+            </Button>
+            <Button variant="ghost" size="icon" onClick={toggleTheme} title="切换主题">
+              {dark ? <Sun /> : <Moon />}
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -145,7 +170,7 @@ export default function App() {
             </Suspense>
           ) : (
             <p className="py-16 text-center text-sm text-muted-foreground">
-              节点不存在或未公开。<button className="underline" onClick={() => go(null)}>返回列表</button>
+              服务器不存在或未公开。<button className="underline" onClick={() => go(null)}>返回列表</button>
             </p>
           )
         ) : !nodes ? (
@@ -156,12 +181,31 @@ export default function App() {
           </div>
         ) : (
           <>
-            <Summary nodes={sorted} />
-            {sorted.length === 0 ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">还没有节点</p>
+            <Summary nodes={shown} />
+            {groups.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  onClick={() => setGroup("")}
+                  className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${group === "" ? "border-primary bg-secondary font-medium" : "text-muted-foreground hover:bg-muted"}`}
+                >
+                  全部 {sorted.length}
+                </button>
+                {groups.map((g) => (
+                  <button
+                    key={g}
+                    onClick={() => setGroup(g === group ? "" : g)}
+                    className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${g === group ? "border-primary bg-secondary font-medium" : "text-muted-foreground hover:bg-muted"}`}
+                  >
+                    {g} {sorted.filter((n) => n.group === g).length}
+                  </button>
+                ))}
+              </div>
+            )}
+            {shown.length === 0 ? (
+              <p className="py-16 text-center text-sm text-muted-foreground">还没有服务器</p>
             ) : (
               <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {sorted.map((n: Node) => (
+                {shown.map((n: Node) => (
                   <NodeCard key={n.id} node={n} onOpen={() => go(n.id)} />
                 ))}
               </div>
